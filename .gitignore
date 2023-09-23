@@ -7,3 +7,5 @@
 /config.json
 /gitlab-packagist
 /storage
+/build.sh
+composer-registry

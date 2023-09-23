@@ -2,13 +2,19 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"regexp"
 
 	bolt "go.etcd.io/bbolt"
 )
 
 func addOrUpdateVersion(tx *bolt.Tx, bytes []byte, version, downloadLink, infoKey string) error {
 	composerJson := map[string]interface{}{}
+
+	if !matchVersionConstraint(version) {
+		return errors.New(fmt.Sprintf("version '%s' does not match regex ^v?[0-9]+\\.[0-9]+\\.[0-9]+(\\-[A-z]+)?$", version))
+	}
 
 	if err := json.Unmarshal(bytes, &composerJson); err != nil {
 		return err
@@ -39,6 +45,11 @@ func deleteVersion(tx *bolt.Tx, saveTag string) error {
 	}
 
 	return nil
+}
+
+func matchVersionConstraint(version string) bool {
+	var digitCheck = regexp.MustCompile(`^v?[0-9]+\.[0-9]+\.[0-9]+(\-[A-z]+)?$`)
+	return !digitCheck.MatchString(version)
 }
 
 func addOrUpdateVersionDirect(tx *bolt.Tx, composerJson map[string]interface{}, downloadLink, version, infoKey string) error {
