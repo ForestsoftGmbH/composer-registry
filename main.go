@@ -30,6 +30,7 @@ func main() {
 	}
 
 	router := httprouter.New()
+	router.GET("/_health", healthHandler)
 	router.GET("/packages.json", packagesJsonHandler)
 	router.GET("/p/:owner/:repo/versions.json", singlePackageHandler)
 	router.POST("/webhook/:name", webhookHandler)
@@ -41,7 +42,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	db, err = bolt.Open(path.Join(config.StoragePath, "packages.db"), 0666, nil)
+	db, err = loadDb()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -65,6 +66,24 @@ func main() {
 
 	log.Infof("Listing on %s", config.BindAddress)
 	log.Fatal(http.ListenAndServe(config.BindAddress, router))
+}
+
+func loadDb() (*bolt.DB, error) {
+	db, err := bolt.Open(path.Join(config.StoragePath, "packages.db"), 0666, nil)
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	return db, nil
+}
+
+func healthHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	if db == nil {
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+	fmt.Fprint(writer, "OK")
 }
 
 func webhookHandler(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
