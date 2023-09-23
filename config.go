@@ -31,7 +31,8 @@ type Config struct {
 	BindAddress string           `yaml:"bind_address" json:"bind_address" env:"COMPOSER_REGISTRY_BIND_ADDRESS"`
 }
 type ConfigProjects struct {
-	Name string `yaml:"name"`
+	Name     string `yaml:"name"`
+	BasePath string `yaml:"basePath"`
 }
 type ConfigProvider struct {
 	Name            string           `yaml:"name" json:"name"`

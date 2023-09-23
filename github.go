@@ -141,7 +141,7 @@ func (g GithubProvider) updateAllBranches(ctx context.Context, owner string, rep
 				saveTag := g.generateSaveTag(owner, repo, branch.GetName())
 
 				if err := g.addOrUpdate(ctx, tx, owner, repo, branch.GetName(), branch.GetCommit().GetSHA(), saveTag); err != nil {
-					log.Errorf("cannot update branch %s of %s/%s\n", branch.GetName(), owner, repo)
+					log.Errorf("cannot update branch %s of %s/%s: %s\n", branch.GetName(), owner, repo, err)
 				}
 			}
 
@@ -159,7 +159,8 @@ func (g GithubProvider) updateAllBranches(ctx context.Context, owner string, rep
 func (g GithubProvider) addOrUpdate(ctx context.Context, tx *bolt.Tx, owner, repo, version, sha, saveTag string) error {
 	log.Infof("updating info of %s/%s for version %s\n", owner, repo, version)
 
-	file, _, _, err := g.client.Repositories.GetContents(ctx, owner, repo, "composer.json", &github.RepositoryContentGetOptions{Ref: sha})
+	path := g.GetBasePathForRepo(repo)
+	file, _, _, err := g.client.Repositories.GetContents(ctx, owner, repo, path+"composer.json", &github.RepositoryContentGetOptions{Ref: sha})
 
 	if err != nil {
 		return err
@@ -172,4 +173,15 @@ func (g GithubProvider) addOrUpdate(ctx context.Context, tx *bolt.Tx, owner, rep
 	}
 
 	return addOrUpdateVersion(tx, []byte(content), version, fmt.Sprintf("https://api.github.com/repos/%s/%s/zipball/%s", owner, repo, sha), saveTag)
+}
+func (g GithubProvider) GetBasePathForRepo(repoName string) string {
+
+	//loop throuh provider projects
+	for _, project := range g.provider.Projects {
+		if strings.Contains(project.Name, repoName) && project.BasePath != "" {
+			return project.BasePath
+		}
+	}
+
+	return ""
 }
