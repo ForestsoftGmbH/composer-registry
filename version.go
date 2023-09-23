@@ -49,7 +49,7 @@ func deleteVersion(tx *bolt.Tx, saveTag string) error {
 
 func matchVersionConstraint(version string) bool {
 	var digitCheck = regexp.MustCompile(`^v?[0-9]+\.[0-9]+\.[0-9]+(\-[A-z]+)?$`)
-	return !digitCheck.MatchString(version)
+	return digitCheck.MatchString(version)
 }
 
 func addOrUpdateVersionDirect(tx *bolt.Tx, composerJson map[string]interface{}, downloadLink, version, infoKey string) error {
